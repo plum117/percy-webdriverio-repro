@@ -1,0 +1,35 @@
+# Each job runs one reproduction. A red job means that the bug is present.
+# The Firefox job and the bundler type check are controls: they stay green.
+name: Repro
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repro:
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: 'iframe: Chrome, BiDi', script: 'repro:iframe:chrome' }
+          - { name: 'iframe: Chrome, Classic', script: 'repro:iframe:chrome-classic' }
+          - { name: 'iframe: Firefox, BiDi (control)', script: 'repro:iframe:firefox' }
+          - { name: 'types: NodeNext', script: 'repro:types:nodenext' }
+          - { name: 'types: runtime .default', script: 'repro:types:runtime' }
+          - { name: 'types: bundler (control)', script: 'repro:types:bundler' }
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --no-audit --no-fund
+      - run: npm run ${{ matrix.script }}
+        env:
+          PERCY_LOGLEVEL: debug

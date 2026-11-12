@@ -1,0 +1,22 @@
+{
+  "name": "percy-webdriverio-repro",
+  "private": true,
+  "type": "module",
+  "description": "Reproductions for @percy/webdriverio with WebdriverIO 10",
+  "scripts": {
+    "repro:iframe:chrome": "node iframe/run.mjs chrome",
+    "repro:iframe:chrome-classic": "node iframe/run.mjs chrome classic",
+    "repro:iframe:firefox": "node iframe/run.mjs firefox",
+    "repro:types:nodenext": "tsc -p types/tsconfig.nodenext.json",
+    "repro:types:bundler": "tsc -p types/tsconfig.bundler.json",
+    "repro:types:runtime": "node types/runtime-default.mjs"
+  },
+  "devDependencies": {
+    "@percy/cli": "1.32.12",
+    "@percy/dom": "1.32.12",
+    "@percy/sdk-utils": "1.32.12",
+    "@percy/webdriverio": "3.3.5-beta.0",
+    "typescript": "6.0.3",
+    "webdriverio": "10.2.0"
+  }
+}
