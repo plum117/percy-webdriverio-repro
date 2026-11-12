@@ -21,6 +21,11 @@ jobs:
           - { name: 'types: NodeNext', script: 'repro:types:nodenext' }
           - { name: 'types: runtime .default', script: 'repro:types:runtime' }
           - { name: 'types: bundler (control)', script: 'repro:types:bundler' }
+          - { name: 'parallel: Mocha parallelMode, Chrome', script: 'repro:parallel:mocha' }
+          - { name: 'parallel: Mocha parallelMode, Firefox', script: 'repro:parallel:mocha-firefox' }
+          - { name: 'parallel: Vitest parallelMode, Chrome', script: 'repro:parallel:vitest' }
+          - { name: 'parallel: Mocha sequential (control)', script: 'repro:parallel:mocha-sequential' }
+          - { name: 'parallel: Vitest sequential (control)', script: 'repro:parallel:vitest-sequential' }
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

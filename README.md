@@ -1,6 +1,6 @@
 # percy-webdriverio-repro
 
-Reproductions for two problems in `@percy/webdriverio` with WebdriverIO 10.
+Reproductions for three problems in `@percy/webdriverio` with WebdriverIO 10.
 
 | Package | Version |
 |---|---|
@@ -77,3 +77,44 @@ typeof percySnapshot.default : undefined
 Thus, an ESM TypeScript project with `NodeNext` has no way to call `percySnapshot` that
 both compiles and runs. With `export = percySnapshot` in `types/index.d.ts`, both the
 `NodeNext` and the `bundler` checks pass.
+
+## 3. WebdriverIO 10 parallel mode: snapshots lose their cross-origin iframes, with no error
+
+WebdriverIO 10 can run the tests of one worker at the same time, each test in its own
+browsing context: `mochaOpts.parallelMode` and `vitestOpts.parallelMode` with
+`test.concurrent` ([docs](https://webdriver.io/docs/parallel-tests)). In this mode, WebDriver
+Classic commands throw, except `status`, `getTimeouts` and `getWindowHandles`.
+
+When `percySnapshot` gets `browser` in a BiDi session, the SDK calls `getWindowHandle()` to find
+the root browsing context. In parallel mode this call throws. The SDK catches the error and
+writes it only at debug level, so the snapshot is sent without its cross-origin iframes and the
+test passes. When `percySnapshot` gets the context that `browser.url()` returns, the snapshot
+is correct.
+
+```sh
+npm run repro:parallel:mocha               # Mocha parallelMode, Chrome: fails
+npm run repro:parallel:mocha-firefox       # Mocha parallelMode, Firefox: fails
+npm run repro:parallel:vitest              # Vitest parallelMode, Chrome: fails
+npm run repro:parallel:mocha-sequential    # control: passes
+npm run repro:parallel:vitest-sequential   # control: passes
+```
+
+The [spec](parallel/mocha.spec.mjs) runs two tests at the same time. Each test opens its own
+page with one cross-origin iframe and takes two snapshots: one with `browser` and one with the
+context. [`parallel/check.mjs`](parallel/check.mjs) reads the snapshot bodies that the SDK sent.
+
+```text
+mocha, parallelMode: "contexts", chrome
+  a via browser  page /a, cross-origin iframes: 0  WRONG
+  a via context  page /a, cross-origin iframes: 1  OK
+  b via browser  page /b, cross-origin iframes: 0  WRONG
+  b via context  page /b, cross-origin iframes: 1  OK
+  debug log: [percy:webdriverio] Error capturing CORS iframes: getWindowHandle is not supported in parallel mode — WebDriver Classic commands act on the session's focused window, which concurrent tests share. ...
+```
+
+Workaround: give the context that `browser.url()` returns:
+
+```js
+const page = await browser.url('/checkout')
+await percySnapshot(page, 'Checkout')
+```
